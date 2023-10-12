@@ -4,17 +4,32 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
-from .models import User, Category, Listing
+from .models import User, Category, Listing, Comment
 
 
 def listing(request, id):
     listing_data = Listing.objects.get(pk=id)
     listing_in_watchlist = request.user in listing_data.watchlist.all()
+    all_comments = Comment.objects.filter(listing=listing_data)
     return render(request, "auctions/listing.html",{
         "listing": listing_data,
-        "listing_in_watchlist": listing_in_watchlist
+        "listing_in_watchlist": listing_in_watchlist,
+        "all_comments": all_comments
     })
 
+
+def add_comment(request, id):
+    current_user = request.user
+    listing_data = Listing.objects.get(pk=id)
+    message = request.POST['new_comment']
+
+    new_comment = Comment(
+        author=current_user,
+        listing=listing_data,
+        message=message
+    )
+    new_comment.save()
+    return HttpResponseRedirect(reverse("listing", args=(id, )))
 
 def watchlist(request):
     current_user = request.user
